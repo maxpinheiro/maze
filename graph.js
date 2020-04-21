@@ -1,51 +1,53 @@
 // represents a vertex in a graph
-function Vertex(pos) {
-    this.pos = pos;
-    this.outEdges = [];
-    this.state = "unvisited";
-    this.distFromStart = 0;
-    this.distFromExit = 0;
-
-    // adds the given cell to this cell's list of edges
-    this.connectTo = function (that) {
-        this.outEdges.push(new Edge(this, that));
-    };
-
-    // resets all components of this vertex
-    this.reset = function () {
+class Vertex {
+    constructor(pos) {
+        this.pos = pos;
         this.outEdges = [];
         this.state = "unvisited";
         this.distFromStart = 0;
         this.distFromExit = 0;
-    };
+    }
+    // adds the given cell to this cell's list of edges
+    connectTo(that) {
+        this.outEdges.push(new Edge(this, that));
+    }
+
+    // resets all components of this vertex
+    reset() {
+        this.outEdges = [];
+        this.state = "unvisited";
+        this.distFromStart = 0;
+        this.distFromExit = 0;
+    }
 
     // returns the rep in the given union/find hashmap for this vertex
-    this.findRep = function (reps) {
+    findRep(reps) {
         return reps.get(this.pos);
-    };
+    }
 
     // returns the vertex that this vertex came from, according to the given hashmap
-    this.findCameFrom = function (cameFrom) {
+    findCameFrom(cameFrom) {
         let path = cameFrom.get(this.pos);
         return path.getFrom();
-    };
+    }
 
     // adds this vertex's posn to the union/find hashmap
-    this.addToHashMap = function (reps) {
+    addToHashMap(reps) {
         if (!reps.containsKey(this.pos)) {
             reps.put(this.pos, this.pos);
         }
-    };
+    }
 
     // adds all of the edges in this vertex to the given list    
-    this.addEdgesTo = function (edges) {
-        for (const e in this.outEdges) {
+    addEdgesTo(edges) {
+        for (let i = 0; i < this.outEdges.length; i += 1) {
+            let e = this.outEdges[i];
             edges.push(e);
         }
-    };
+    }
 
     // returns the vertex with the bigger distance from the target
-    this.getBiggerDist = function (that, target) {
+    getBiggerDist(that, target) {
         if (target == "start" && this.distFromStart > that.distFromStart) {
             return this;
         }
@@ -55,30 +57,82 @@ function Vertex(pos) {
         else {
             return that;
         }
-    };
+    }
 
     // returns a list of all the vertices this vertex is connected to
-    this.listNeighbors = function() {
+    listNeighbors() {
         let neighbors = [];
-        for (const e in this.outEdges) {
+        for (let i = 0; i < this.outEdges.length; i += 1) {
+            let e = this.outEdges[i];
             e.addOutTo(neighbors);
         }
         return neighbors;
-    };
+    }
 
     // draws this vertex
-    this.drawCell = function(currentCell, showPaths, gradientMode, biggestFromStart, biggestFromExit) {
-        // TO DO
-    };
+    drawCell(currentCell, showPaths, gradientMode, biggestFromStart, biggestFromExit) {
+        fill(135, 135, 135);
+        if (currentCell) {
+            fill(255);
+        } // gradient relative to start
+        else if (gradientMode == "fromStart") {
+            let maxDist = biggestFromStart.distFromStart;
+            let scaled = this.distFromStart / maxDist; // [0, 1], 1 = far from start
+            scaled *= 255; // 255 = far from start = blue
+            fill((int)(255 - scaled), 0, floor(scaled));
+        } // gradient relative to exit
+        else if (gradientMode == "fromExit") {
+            let maxDist = biggestFromExit.distFromExit;
+            let scaled = this.distFromExit / maxDist; // [0, 1], 1 = close to end
+            scaled *= 255; // 255 = close to end = red
+            fill((int)(255 - scaled), 0, floor(scaled));
+        } // visited
+        else if (this.state == "visited" && showPaths) {
+            fill(145, 184, 242);
+        } // part of path
+        else if (this.state == "path") {
+            fill(60, 118, 204);
+        }
+        // draw cell
+        stroke(0);
+        rect(this.pos.x * TILE_SIZE, this.pos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    }
 
     // visually removes this vertex's walls
-    this.drawConnections = function(showPaths, gradientMode, biggestFromStart, biggestFromExit) {
-
-    };
+    drawConnections(showPaths, gradientMode, biggestFromStart, biggestFromExit) {
+        fill(135, 135, 135);
+        noStroke();
+        if (gradientMode == "fromStart") {
+            let maxDist = biggestFromStart.distFromStart;
+            let scaled = this.distFromStart / maxDist; // [0, 1], 1 = far from start
+            scaled *= 255; // 255 = far from start = blue
+            fill((int)(255 - scaled), 0, floor(scaled));
+        } // gradient relative to exit
+        else if (gradientMode == "fromExit") {
+            let maxDist = biggestFromExit.distFromExit;
+            let scaled = this.distFromExit / maxDist; // [0, 1], 1 = close to end
+            scaled *= 255; // 255 = close to end = red
+            fill((int)(255 - scaled), 0, floor(scaled));
+        } // visited
+        else if (this.state == "visited" && showPaths) {
+            fill(145, 184, 242);
+        } // part of path
+        else if (this.state == "path") {
+            fill(60, 118, 204);
+        }
+        // connection to the right: cover right wall
+        if (this.edgeInDir("right")) {
+            rect((this.pos.x + 1) * TILE_SIZE, thie.pos.y * TILE_SIZE + 1, 2, TILE_SIZE - 1);
+        }
+        // connection to the right: cover right wall
+        if (this.edgeInDir("down")) {
+            rect(this.pos.x * TILE_SIZE + 1, (this.pos.y + 1) * TILE_SIZE, TILE_SIZE - 1, 2);
+        }
+    }
 
     // is there an edge between this vertex and the neighbor in the given direction?
-    this.edgeInDir = function(dir) {
-        if (dir =="left") {
+    edgeInDir(dir) {
+        if (dir == "left") {
             return this.outEdgeAt(new Posn(this.pos.x - 1, this.pos.y));
         }
         else if (dir == "right") {
@@ -90,88 +144,92 @@ function Vertex(pos) {
         else if (dir == "down") {
             return this.outEdgeAt(new Posn(this.pos.x, this.pos.y + 1));
         }
-    };
+    }
 
     // does this vertex have an outEdge with a neighbor at the given position
-    this.outEdgeAt = function(neighbor) {
-        for (const e in this.outEdges) {
+    outEdgeAt(neighbor) {
+        for (let i = 0; i < this.outEdges.length; i += 1) {
+            let e = this.outEdges[i];
             if (e.outTo(neighbor)) {
                 return true;
             }
         }
         return false;
-    };
+    }
 
     // has this vertex been visited so far?
-    this.beenVisited = function() {
+    beenVisited() {
         return this.state == "unvisited";
-    };
+    }
 
     // is this vertex part of the path?
-    this.inPath = function() {
+    inPath() {
         return this.state == "path";
-    };
+    }
 
     // returns this verex's posn
-    this.getPosn = function() {
+    getPosn() {
         return this.pos;
-    };
+    }
 
     // sets this vertex's state to the given state
-    this.setState = function(state) {
+    setState(state) {
         if (state == "unvisited" || state == "visited" || state == "path") {
             this.state = state;
         }
-    };
+    }
 
     // sets this vertex's distance from the given target to the given distance
-    this.setDistance = function(distFromTarget, target) {
+    setDistance(distFromTarget, target) {
         if (target == "start") {
             this.distFromStart = distFromTarget;
-        } else if (target == "exit") {
+        }
+        else if (target == "exit") {
             this.distFromExit = distFromTarget;
         }
-    };
-
+    }
 }
 
+
 // represents an edge in a graph
-function Edge(from, to) {
-    this.from = from;
-    this.to = to;
+class Edge {
+    constructor(from, to) {
+        this.from = from;
+        this.to = to;
+    }
 
     // connects the vertices in this edge, replaces the from rep with the to rep
-    this.union = function(reps) {
+    union(reps) {
         let fromRep = this.from.findRep(reps);
         let toRep = this.to.findRep(reps);
+        let keySet = reps.keySet();
 
-        for (const p in reps.keySet()) {
+        for (let i = 0; i < keySet.length; i += 1) {
+            let p = keySet[i];
             reps.replace(p, fromRep, toRep);
         }
-
         // connect the vertices
         this.from.connectTo(this.to);
         this.to.connectTo(this.from);
-    };
+    }
 
     // adds this edge's "to" vertex to the given list
-    this.addOutTo = function(list) {
+    addOutTo(list) {
         list.push(this.to);
-    };
+    }
 
     // do the vertices in this edge have the same rep in the given hashmap?
-    this.sameTree = function(reps) {
+    sameTree(reps) {
         return this.from.findRep(reps) == this.to.findRep(reps);
-    };
+    }
 
     // is the to vertex in this edge at the given position?
-    this.outTo = function(pos) {
+    outTo(pos) {
         return this.to.getPosn() == pos;
-    };
+    }
 
     // returns this edge's from vertex
-    this.getFrom = function() {
+    getFrom() {
         return this.from;
     };
-    
 }

@@ -111,7 +111,7 @@ class Sentinel {
     removeLast() {
         return this.prev.removeThis();
     }
-    
+
     // returns the number of nodes in this cycle
     size(start) {
         if (this.next == start) {
@@ -154,42 +154,38 @@ class Node {
     }
 }
 
+
 // represents a hashmap
-function HashMap() {
-    this.list = [];
-
-    // returns the value at the given key
-    this.get = function (key) {
-        let index = this.getIndex(key);
-        return this.list[index];
-    };
-
-    this.getIndex = function (key) {
-        let key = (Posn) (key);
-        return key.x * 10 + key.y;
-    };
-
-    this.containsKey = function (key) {
-        return this.get(key) != undefined;
-    };
-
-    this.put = function (key, value) {
-        let index = this.getIndex(key);
-        this.list[index] = value;
-    };
-
-    this.keySet = function () {
-        let set = [];
-        for (let index = 0; index < this.list.length; index += 1) {
-            if (this.list[index] != undefined) {
-                set.push(index);
+class HashMap {
+    constructor() {
+        this.list = [];
+        // returns the value at the given key
+        this.get = function (key) {
+            let index = this.getIndex(key);
+            return this.list[index];
+        };
+        this.getIndex = function (key) {
+            return key.x * 10 + key.y;
+        };
+        this.containsKey = function (key) {
+            return this.get(key) != undefined;
+        };
+        this.put = function (key, value) {
+            let index = this.getIndex(key);
+            this.list[index] = value;
+        };
+        this.keySet = function () {
+            let set = [];
+            for (let index = 0; index < this.list.length; index += 1) {
+                if (this.list[index] != undefined) {
+                    set.push(index);
+                }
             }
-        }
-        return set;
-    };
-
-    this.replace = function (key, value) {
-        let index = this.getIndex(key);
-        this.list[index] = value;
-    };
+            return set;
+        };
+        this.replace = function (key, value) {
+            let index = this.getIndex(key);
+            this.list[index] = value;
+        };
+    }
 }
