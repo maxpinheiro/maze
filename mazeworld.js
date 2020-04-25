@@ -7,7 +7,7 @@ class MazeWorld {
         this.ncol = ncol;
         this.currCell = this.maze.getStart();
         this.worklist = new Stack(new Deque());
-        this.cameFrom = new HashMap();
+        this.cameFrom = new Map();
         this.foundPath = false;
         this.searchMode = "setup";
         this.showPaths = true;
@@ -31,7 +31,7 @@ class MazeWorld {
         else if (this.searchMode == "depth" || this.searchMode == "breadth") {
             this.searchStep();
         }
-        if (this.foundPath && !this.searchMode == "none") {
+        if (this.foundPath && this.searchMode != "none") {
             this.backTrackPath();
         }
     }
@@ -80,7 +80,7 @@ class MazeWorld {
             }
         } // manual movement
         else if (this.doneConstructing && this.searchMode == "manual"
-            && (key == "left" || key == "right" || key == "down" || key == "up")) {
+            && (key == "ArrowLeft" || key == "ArrowRight" || key == "ArrowDown" || key == "ArrowUp")) {
             this.manualStep(key);
         }
         // resetting the search
@@ -107,6 +107,13 @@ class MazeWorld {
     makeScene() {
         // draw the maze
         this.maze.drawMaze(this.currCell, this.showPaths, this.gradientMode);
+
+        stroke(0);
+        fill(0);
+        textSize(floor(this.ncol * 1.25));
+        textAlign(CENTER);
+        rectMode(CENTER);
+
         // opening scene (setting up maze)
         if (this.searchMode == "setup") {
             this.showSetupScreen();
@@ -119,7 +126,7 @@ class MazeWorld {
             this.showStatScreen();
             this.resetSearch();
         } // screen while backtracking
-        else if (this.foundPath && !this.currCell == this.maze.getStart()) {
+        else if (this.foundPath && this.currCell != this.maze.getStart()) {
             this.showBacktrackScreen();
         } // end screen
         else if (this.foundPath && this.currCell == this.maze.getStart()) {
@@ -203,7 +210,6 @@ class MazeWorld {
     // less important helper methods //
     ///////////////////////////////////
 
-
     // prepares this world to perform BFS
     setBreadth() {
         this.searchMode = "breadth";
@@ -220,22 +226,121 @@ class MazeWorld {
 
     // draws the setup menu
     showSetupScreen() {
+        const textSz = floor(this.ncol * 1.25);
+
+        fill(200, 200, 200, 175);
+        noStroke();
+        rect(width / 2 - 5, height / 2.68, 12 * textSz, 2 * textSz + 5);
+        rect(width / 2, height / 2.06, 7.5 * textSz, textSz + 5);
+        rect(width / 2,  height / 1.7, 9 * textSz, textSz + 5);
+        rect(width / 2, 0.97 * height / 1.415, 8 * textSz, textSz + 5);
+
+        fill(0);
+        stroke(0);
+        textSize(textSz * 2);
+        text("Setup Maze: ", width / 2, 2 * height / 5);
+
+        textSize(textSz);
+        text("n: normal setup", width / 2, height / 2);
+        text("h: horizontal bias", width / 2, 3 * height / 5);
+        text("v: vertical bias", width / 2, 3.5 * height / 5);
     }
 
     // draws the statistics screen
     showStatScreen() {
+        this.setDepth();
+        this.search("depth");
+        let depthSize = this.numWrongMoves() + this.pathLength;
+        this.setBreadth();
+        this.search("breadth");
+        let breadthSize = this.numWrongMoves() + this.pathLength;
+
+        const textSz = floor(this.ncol * 1.25);
+
+        fill(200, 200, 200, 175);
+        noStroke();
+        rect(width / 2, height / 2.73, 16 * textSz, 2 * textSz + 5);
+        rect(width / 2, height / 1.97, 7.5 * textSz, textSz + 5);
+        rect(width / 2, height / 1.65, 7.6 * textSz, textSz + 5);
+        rect(width / 2, height / 1.42, 8.5 * textSz, textSz + 5);
+
+        fill(0);
+        stroke(0);
+
+        textSize(textSz * 2);
+        text("Search Statistics:", width / 2, height / 2.5);
+
+        textSize(textSz);
+        text("Path length: " + this.pathLength, width / 2, height / 1.9);
+        text("Depth steps: " + depthSize, width / 2, height / 1.6);
+        text("Breadth steps: " + breadthSize, width / 2, height / 1.38);
+
     }
 
     // draws the main manu 
     showStartingScreen() {
+        const textSz = floor(this.ncol * 1.25);
+        fill(200, 200, 200, 175);
+        noStroke();
+        rect(width / 2 - 5, height / 5.7, 14 * textSz, 2 * textSz + 5);
+        rect(width / 2, height / 3.5, 8 * textSz, textSz + 5);
+        rect(width / 2, height / 2.72, 7 * textSz, textSz + 5);
+        rect(width / 2,  height / 2.22, 9.75 * textSz, textSz + 5);
+        rect(width / 2, height / 1.88, 10 * textSz, textSz + 5);
+        rect(width / 2, height / 1.62, 12 * textSz, textSz + 5);
+        rect(width / 2, height / 1.41, 12 * textSz, textSz + 5);
+        rect(width / 2, height / 1.25, 13 * textSz, textSz + 5);
+        rect(width / 2, height / 1.12, 10.5 * textSz, textSz + 5);
+
+        fill(0);
+        stroke(0);
+        textSize(textSz * 2);
+        text("Key Controls: ", width / 2, height / 4.7);
+
+        textSize(textSz);
+        text("b: breadth-first", width / 2, height / 3.3);
+        text("d: depth-first", width / 2, height / 2.6);
+        text("m: manual searching", width / 2, height / 2.15);
+        text("n: new random maze", width / 2, height / 1.82);
+        text("r: reset (while searching)", width / 2, height / 1.57);
+        text("p: show/hide visited paths", width / 2, height / 1.38);
+        text("g: show/hide cell gradients", width / 2, height / 1.225);
+        text("s: show/hide statistics", width / 2, height / 1.1);
     }
 
     // draws the backtracking text
     showBacktrackScreen() {
+        const textSz = floor(this.ncol * 1.25);
+
+        fill(200, 200, 200, 175);
+        noStroke();
+        rect(width / 2, height / 2.2, 16 * textSz, 2 * textSz + 5);
+
+        fill(0);
+        stroke(0);
+        textSize(textSz * 2);
+        text("Search complete!", width / 2, height / 2);
     }
 
     // draws the finished menu screen
     showEndScreen() {
+        const textSz = floor(this.ncol * 1.25);
+
+        fill(200, 200, 200, 175);
+        noStroke();
+        rect(width / 2, height / 2.76, 16 * textSz, 2 * textSz + 5);
+        rect(width / 2, height / 1.97, 8.5 * textSz, textSz + 5);
+        rect(width / 2, height / 1.65, 11.7 * textSz, textSz + 5);
+
+        fill(0);
+        stroke(0);
+
+        textSize(textSz * 2);
+        text("Search complete!", width / 2, height / 2.5);
+
+        textSize(textSz);
+        text("Wrong moves: " + this.numWrongMoves(), width / 2, height / 1.9);
+        text("Press 'n' for a new maze", width / 2, height / 1.6);
     }
 
     // returns the number of cells that were visited unnecessarily during the search

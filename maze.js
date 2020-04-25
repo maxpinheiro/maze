@@ -9,7 +9,7 @@ class Maze {
         // fields needed for maze construction
         this.representatives = this.listReps();
         this.worklist = this.listAllEdges(nrow, ncol);
-        this.workListIt = new RandomIterator(this.worklist);
+        this.worklistIt = new RandomIterator(this.worklist);
     }
 
     ///////////////////////
@@ -20,11 +20,12 @@ class Maze {
     constructMazeNext(nrow, ncol) {
         if (this.edgesInTree.length < (nrow * ncol) - 1 && this.worklistIt.hasNext()) {
             let e = this.worklistIt.next();
+
             if (e.sameTree(this.representatives)) {
                 // do nothing
             }
             else {
-                this.edgesInTree.add(e);
+                this.edgesInTree.push(e);
                 e.union(this.representatives);
             }
             return false;
@@ -47,9 +48,10 @@ class Maze {
             let neighbors = next.listNeighbors();
             for (let i = 0; i < neighbors.length; i += 1) {
                 let v = neighbors[i];
-                if (!cameFrom.containsKey(v.getPosn())) {
+                //if (!cameFrom.has(v.getPosn())) {
+                if (!this.mapContainsPosn(cameFrom, v.getPosn())) {
                     worklist.add(v);
-                    cameFrom.put(v.getPosn(), new Edge(next, v));
+                    cameFrom.set(v.getPosn(), new Edge(next, v));
                 }
             }
             next.setState("visited");
@@ -57,29 +59,40 @@ class Maze {
         return next;
     }
 
+    // does the given map contain the given posn key?
+    mapContainsPosn(map, posn) {
+        for (let p of map.keys()) {
+            if (p.samePosn(posn)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // performs the next manual step for this maze based on the given direction
     findNextManual(dir, currCell, cameFrom) {
         let next = currCell;
         let currPos = currCell.getPosn();
         // if there's an edge in the given direction - move in that direction
-        if (dir == "left" && currCell.edgeInDir("left")) {
+        if (dir == "ArrowLeft" && currCell.edgeInDir("left")) {
             next = this.getCellAt(new Posn(currPos.x - 1, currPos.y));
         }
-        else if (dir == "right" && currCell.edgeInDir("right")) {
+        else if (dir == "ArrowRight" && currCell.edgeInDir("right")) {
             next = this.getCellAt(new Posn(currPos.x + 1, currPos.y));
         }
-        else if (dir == "up" && currCell.edgeInDir("up")) {
+        else if (dir == "ArrowUp" && currCell.edgeInDir("up")) {
             next = this.getCellAt(new Posn(currPos.x, currPos.y - 1));
         }
-        else if (dir == "down" && currCell.edgeInDir("down")) {
+        else if (dir == "ArrowDown" && currCell.edgeInDir("down")) {
             next = this.getCellAt(new Posn(currPos.x, currPos.y + 1));
         }
         // valid move: set next as visited
         if (next != currCell) {
             next.setState("visited");
-            // add to hashmap
-            if (!cameFrom.containsKey(next.getPosn())) {
-                cameFrom.put(next.getPosn(), new Edge(currCell, next));
+            // add to map
+            //if (!cameFrom.has(next.getPosn())) {
+            if (!this.mapContainsPosn(cameFrom, next.getPosn())) {
+                cameFrom.set(next.getPosn(), new Edge(currCell, next));
             }
         }
         return next;
@@ -125,12 +138,13 @@ class Maze {
         return edges;
     }
 
-    // returns the hashmap representing the union/find structure
+    // returns the map representing the union/find structure
     listReps() {
         if (this.representatives != null) {
             return this.representatives;
         }
-        let reps = new HashMap();
+
+        let reps = new Map();
         for (let i = 0; i < this.vertices.length; i += 1) {
             let v = this.vertices[i];
             v.addToHashMap(reps);
@@ -143,8 +157,8 @@ class Maze {
         this.representatives = null;
         this.representatives = this.listReps();
         this.edgesInTree = [];
-        this.worklist = this.listAllEdges(nrow, ncol);
-        this.workListIt = new RandomIterator(worklist);
+        this.worklist = this.listAllEdges(this.nrow, this.ncol);
+        this.workListIt = new RandomIterator(this.worklist);
         for (let i = 0; i < this.vertices.length; i += 1) {
             let v = this.vertices[i];
             v.reset();
@@ -213,7 +227,7 @@ class Maze {
     getCellAt(pos) {
         for (let i = 0; i < this.vertices.length; i += 1) {
             let v = this.vertices[i];
-            if (v.getPosn() == pos) {
+            if (v.getPosn().samePosn(pos)) {
                 return v;
             }
         }
@@ -240,18 +254,27 @@ class Maze {
     assignDistanceFrom(target, targetType) {
         let worklist = new Deque();
         worklist.addAtHead(target);
-        let cameFrom = new HashMap();
+        //let cameFrom = new Map();
+        let alreadySeen = [];
+
         let distFromTarget = 0;
+        
         while (worklist.size() > 0) {
             let next = worklist.removeFromHead();
-            next.setDistance(distFromTarget, targetType);
+            if (!alreadySeen.includes(next)) {
+                next.setDistance(distFromTarget, targetType);
+            }
+
             // add neighbors
             let neighbors = next.listNeighbors();
+            
             for (let i = 0; i < neighbors.length; i += 1) {
                 let v = neighbors[i];
-                if (!cameFrom.containsKey(v.getPosn())) {
+                //if (!cameFrom.has(v.getPosn())) {
+                if (!alreadySeen.includes(v.getPosn())) {
                     worklist.addAtTail(v);
-                    cameFrom.put(v.getPosn, new Edge(next, v));
+                    //cameFrom.set(v.getPosn, new Edge(next, v));
+                    alreadySeen.push(v.getPosn());
                 }
             }
             distFromTarget += 1;
@@ -268,6 +291,11 @@ class Maze {
             }
         }
         return count;
+    }
+
+    // sets the bias for the worklist iterator
+    setBias(bias) {
+        this.worklistIt = new RandomIterator(this.worklist, bias);
     }
 }
 
@@ -296,17 +324,17 @@ class RandomIterator {
         if (this.hasNext()) {
             let n = Math.random() * 10;
             let ans = null;
-            if (n < divide && this.remainingHorz.length > 0
-                || n >= divide && this.remainingVert.length == 0) {
-                let index = Math.random() * this.remainingHorz.length;
+            if (n < this.divide && this.remainingHorz.length > 0
+                || n >= this.divide && this.remainingVert.length == 0) {
+                let index = floor(Math.random() * this.remainingHorz.length);
                 ans = this.remainingHorz[index];
-                this.remainingHorz.remove(index);
+                this.remainingHorz.splice(index, 1);
             }
-            else if (n >= divide && this.remainingVert.length > 0
-                || n < divide && this.remainingHorz.length == 0) {
-                let index = Math.random() * this.remainingVert.length;
+            else if (n >= this.divide && this.remainingVert.length > 0
+                || n < this.divide && this.remainingHorz.length == 0) {
+                let index = floor(Math.random() * this.remainingVert.length);
                 ans = this.remainingVert[index];
-                this.remainingVert.remove(index);
+                this.remainingVert.splice(index, 1);
             }
             return ans;
         }
@@ -331,5 +359,9 @@ class Posn {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+    }
+
+    samePosn(that) {
+        return this.x == that.x && this.y == that.y;
     }
 }

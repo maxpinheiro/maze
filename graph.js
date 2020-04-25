@@ -33,8 +33,10 @@ class Vertex {
 
     // adds this vertex's posn to the union/find hashmap
     addToHashMap(reps) {
-        if (!reps.containsKey(this.pos)) {
-            reps.put(this.pos, this.pos);
+        //if (!reps.containsKey(this.pos)) {
+        if (!reps.has(this.pos)) {
+            //reps.put(this.pos, this.pos);
+            reps.set(this.pos, this.pos);
         }
     }
 
@@ -101,6 +103,7 @@ class Vertex {
     // visually removes this vertex's walls
     drawConnections(showPaths, gradientMode, biggestFromStart, biggestFromExit) {
         fill(135, 135, 135);
+        //fill(255, 0, 0);
         noStroke();
         if (gradientMode == "fromStart") {
             let maxDist = biggestFromStart.distFromStart;
@@ -120,13 +123,14 @@ class Vertex {
         else if (this.state == "path") {
             fill(60, 118, 204);
         }
+
         // connection to the right: cover right wall
         if (this.edgeInDir("right")) {
-            rect((this.pos.x + 1) * TILE_SIZE, thie.pos.y * TILE_SIZE + 1, 2, TILE_SIZE - 1);
+            rect((this.pos.x + 1) * TILE_SIZE - 1, this.pos.y * TILE_SIZE + 0.5, 2, TILE_SIZE - 1);
         }
         // connection to the right: cover right wall
         if (this.edgeInDir("down")) {
-            rect(this.pos.x * TILE_SIZE + 1, (this.pos.y + 1) * TILE_SIZE, TILE_SIZE - 1, 2);
+            rect(this.pos.x * TILE_SIZE + 0.5, (this.pos.y + 1) * TILE_SIZE - 1, TILE_SIZE - 1, 2);
         }
     }
 
@@ -147,10 +151,10 @@ class Vertex {
     }
 
     // does this vertex have an outEdge with a neighbor at the given position
-    outEdgeAt(neighbor) {
+    outEdgeAt(neighborPos) {
         for (let i = 0; i < this.outEdges.length; i += 1) {
             let e = this.outEdges[i];
-            if (e.outTo(neighbor)) {
+            if (e.outTo(neighborPos)) {
                 return true;
             }
         }
@@ -159,7 +163,7 @@ class Vertex {
 
     // has this vertex been visited so far?
     beenVisited() {
-        return this.state == "unvisited";
+        return this.state == "visited";
     }
 
     // is this vertex part of the path?
@@ -202,12 +206,15 @@ class Edge {
     union(reps) {
         let fromRep = this.from.findRep(reps);
         let toRep = this.to.findRep(reps);
-        let keySet = reps.keySet();
-
-        for (let i = 0; i < keySet.length; i += 1) {
-            let p = keySet[i];
-            reps.replace(p, fromRep, toRep);
+        //let keySet = reps.keySet();
+        let keySet = reps.keys();
+        
+        for (let p of keySet) {
+            if (reps.get(p).samePosn(fromRep)) {
+                reps.set(p, toRep);
+            }
         }
+
         // connect the vertices
         this.from.connectTo(this.to);
         this.to.connectTo(this.from);
@@ -220,12 +227,18 @@ class Edge {
 
     // do the vertices in this edge have the same rep in the given hashmap?
     sameTree(reps) {
-        return this.from.findRep(reps) == this.to.findRep(reps);
+        let fromRep = this.from.findRep(reps);
+        let toRep = this.to.findRep(reps);
+
+        return this.from.findRep(reps).samePosn(this.to.findRep(reps));
     }
+
 
     // is the to vertex in this edge at the given position?
     outTo(pos) {
-        return this.to.getPosn() == pos;
+        //let toPosn = this.to.getPosn();
+        //return toPosn.x == pos.x && toPosn.y == pos.y;
+        return this.to.getPosn().samePosn(pos);
     }
 
     // returns this edge's from vertex

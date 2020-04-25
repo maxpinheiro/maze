@@ -1,5 +1,5 @@
 let w;
-const TILE_SIZE = 20;
+const TILE_SIZE = 30;
 // initializes the world
 function setup() {
     let nrow = 15;
@@ -12,12 +12,13 @@ function setup() {
 function draw() {
     background(135, 135, 135);
     noFill();
-    noStroke()
+    noStroke();
+    rectMode(CORNER);
     w.makeScene();
     w.onTick();
 }
 
 // handles key events
 function keyPressed() {
-    w.onKeyEvent(keyCode);
+    w.onKeyEvent(key);
 }
